@@ -24,7 +24,6 @@ Pod::Spec.new do |s|
     ss.dependency 'Result'
     ss.dependency 'Feathers'
     ss.dependency 'Socket.IO-Client-Swift'
-    ss.dependency 'ReactiveSwift'
   end
 
   s.pod_target_xcconfig = {"OTHER_SWIFT_FLAGS[config=Release]" => "-suppress-warnings" }
