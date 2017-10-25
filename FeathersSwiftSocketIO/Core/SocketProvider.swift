@@ -33,16 +33,15 @@ public final class SocketProvider: Provider {
     /// Socket provider initializer.
     ///
     /// - Parameters:
-    ///   - baseURL: Socket url.
-    ///   - configuration: Socket configuration object. See `SocketIO` for more details
-    /// on the possible options.
+    ///   - client: Socket IO Client.
     ///   - timeout: Socket timeout.
-    public init(baseURL: URL, configuration: SocketIOClientConfiguration, timeout: Double = 5) {
-        self.baseURL = baseURL
-        self.configuration = configuration
+    public init(client: SocketIOClient, timeout: Double = 5) {
+        self.baseURL = client.socketURL
+        self.configuration = client.config
         self.timeout = timeout
-        client = SocketIOClient(socketURL: baseURL, config: configuration)
+        self.client = client
     }
+
 
     public func setup(app: Feathers) {
         // Attempt to authenticate using a previously stored token once the client connects.
