@@ -24,11 +24,30 @@ github "feathersjs/feathers-swift-socketio"
 
 To use FeathersSwiftSocket, create an instance of `SocketProvider` and initialize your FeathersSwift application:
 
+### Quickstart
+
 ```swift
-let feathersRestApp = Feathers(provider: SocketProvider(baseURL: URL(string: "https://myawesomefeathersapi.com")!, configuration: [], timeout: 5))
+let feathersRestApp = Feathers(provider: SocketProvider(SocketIOClient(socketURL: URL(string: "https://myawesomefeathersapi.com")!, config: []), timeout: 5))
 ```
 
 Configuration options can be found on [SocketIO's github](https://github.com/socketio/socket.io-client-swift).
+
+### To listen for SocketIO events:
+
+Initialize SocketIOClient seperately so that you have access to that class.
+
+```swift
+let socket: SocketIOClient = SocketIOClient(socketURL: URL.init(string: "https://myawesomefeathersapi.com")!, config: [.reconnects(true), .forceWebsockets(true), .compress, .log(true)])
+let feathersRestApp = Feathers(provider: SocketProvider(client: socket, timeout: 10))
+
+// Example of listening to socket disconnect event
+socket.on(clientEvent: .disconnect) { (dataArray, socketAck) in
+    print("Socket IO Testing .disconnect", dataArray)
+    print("Socket IO Testing .disconnect", socketAck)
+}
+```
+
+
 
 That's it! Your feathers application will now support a real-time socketio api.
 
