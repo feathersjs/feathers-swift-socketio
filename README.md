@@ -46,9 +46,6 @@ socket.on(clientEvent: .disconnect) { (dataArray, socketAck) in
     print("Socket IO Testing .disconnect", socketAck)
 }
 ```
-
-
-
 That's it! Your feathers application will now support a real-time socketio api.
 
 **NOTE:** This framework does not support watchOS due to limitations with the internal SocketIO library.
