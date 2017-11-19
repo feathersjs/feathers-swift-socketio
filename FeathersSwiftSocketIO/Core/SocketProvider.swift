@@ -174,8 +174,7 @@ public final class SocketProvider: Provider {
           guard let object = data.first as? [String: Any] else { return }
           observer.send(value: object)
         })
-        
-        vClient.off(event)
+
       })
     }
   
@@ -191,7 +190,6 @@ public final class SocketProvider: Provider {
           observer.send(value: object)
           observer.sendCompleted()
         })
-        vClient.off(event)
       })
     }
 
