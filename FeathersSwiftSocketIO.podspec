@@ -26,5 +26,5 @@ Pod::Spec.new do |s|
     ss.dependency 'Socket.IO-Client-Swift'
   end
 
-  s.pod_target_xcconfig = {"OTHER_SWIFT_FLAGS[config=Release]" => "-suppress-warnings" }
+  s.pod_target_xcconfig = {"OTHER_SWIFT_FLAGS[config=Release]" => "-suppress-warnings", "SWIFT_VERSION" => "4.0" }
 end

@@ -26,6 +26,9 @@ public final class SocketProvider: Provider {
 
     /// SocketIO client.
     private let client: SocketIOClient
+  
+    /// SocketIO Manager
+    private let manager: SocketManager
 
     /// Socket timeout for `connect` and all emits.
     private let timeout: Double
@@ -41,7 +44,8 @@ public final class SocketProvider: Provider {
         self.baseURL = baseURL
         self.configuration = configuration
         self.timeout = timeout
-        client = SocketIOClient(socketURL: baseURL, config: configuration)
+        manager = SocketManager(socketURL: baseURL, config: configuration)
+        client = manager.defaultSocket
     }
 
     public func setup(app: Feathers) {
@@ -96,7 +100,7 @@ public final class SocketProvider: Provider {
                 return
             }
             if vSelf.client.status == .connecting {
-                vSelf.client.once("connect") { _ in
+                vSelf.client.once("connect") { _,_  in
                     vSelf.client.emitWithAck(path, data).timingOut(after: vSelf.timeout) { data in
                         let result = vSelf.handleResponseData(data: data)
                         if let error = result.error {
@@ -159,38 +163,34 @@ public final class SocketProvider: Provider {
     }
 
     // MARK: - RealTimeProvider
-
-    public func on(event: String) -> Signal<[String: Any], NoError> {
-        return Signal { [weak client = client] observer in
-            guard let vClient = client else {
-                observer.sendInterrupted()
-                return AnyDisposable {}
-            }
-            vClient.on(event, callback: { data, _ in
-                guard let object = data.first as? [String: Any] else { return }
-                observer.send(value: object)
-            })
-            return AnyDisposable {
-                vClient.off(event)
-            }
+    public func on(event: String) -> Signal<[String : Any], NoError> {
+      return Signal({ [weak client = client] (observer: Signal<[String: Any], NoError>.Observer, lifetime: Lifetime) in
+        guard let vClient = client else {
+          observer.sendInterrupted()
+          _ = lifetime.ended
+          return
         }
+        vClient.on(event, callback: { (data, _) in
+          guard let object = data.first as? [String: Any] else { return }
+          observer.send(value: object)
+        })
+
+      })
     }
-
-    public func once(event: String) -> Signal<[String: Any], NoError> {
-        return Signal { [weak client = client] observer in
-            guard let vClient = client else {
-                observer.sendInterrupted()
-                return AnyDisposable {}
-            }
-            vClient.once(event, callback: { data, _ in
-                guard let object = data.first as? [String: Any] else { return }
-                observer.send(value: object)
-                observer.sendCompleted()
-            })
-            return AnyDisposable {
-                vClient.off(event)
-            }
+  
+    public func once(event: String) -> Signal<[String : Any], NoError> {
+      return Signal({ [weak client = client] (observer: Signal<[String: Any], NoError>.Observer, lifetime: Lifetime) in
+        guard let vClient = client else {
+          observer.sendInterrupted()
+          _ = lifetime.ended
+          return
         }
+        vClient.once(event, callback: { (data, _) in
+          guard let object = data.first as? [String: Any] else { return }
+          observer.send(value: object)
+          observer.sendCompleted()
+        })
+      })
     }
 
     public func off(event: String) {
