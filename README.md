@@ -37,8 +37,9 @@ Configuration options can be found on [SocketIO's github](https://github.com/soc
 Initialize SocketIOClient seperately so that you have access to that class.
 
 ```swift
-let socket: SocketIOClient = SocketIOClient(socketURL: URL.init(string: "https://myawesomefeathersapi.com")!, config: [.reconnects(true), .forceWebsockets(true), .compress, .log(true)])
-let feathersRestApp = Feathers(provider: SocketProvider(client: socket, timeout: 10))
+static let socket = SocketManager(socketURL: URL.init(string: JuneConstants.Feathers.baseURL)!, config: [.reconnects(true), .forceWebsockets(true), .compress, .log(true)])
+static let feathersApp = Feathers(provider: SocketProvider(client: socket, timeout: 15))
+
 
 // Example of listening to socket disconnect event
 socket.on(clientEvent: .disconnect) { (dataArray, socketAck) in
