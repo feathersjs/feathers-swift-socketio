@@ -35,11 +35,11 @@ public final class SocketProvider: Provider {
     /// - Parameters:
     ///   - client: Socket IO Client.
     ///   - timeout: Socket timeout.
-    public init(client: SocketIOClient, timeout: Double = 5) {
+    public init(client: SocketManager, timeout : Double = 5) {
         self.baseURL = client.socketURL
         self.configuration = client.config
         self.timeout = timeout
-        self.client = client
+        self.client = client.defaultSocket
     }
 
 
