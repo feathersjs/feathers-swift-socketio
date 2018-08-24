@@ -68,7 +68,7 @@ public final class SocketProvider: Provider {
 
     public func request(endpoint: Endpoint) -> SignalProducer<Response, AnyFeathersError> {
         let emitPath = endpoint.method.socketRequestPath
-        return emit(to: emitPath, with: [endpoint.path] + endpoint.method.socketData)
+        return emit(to: emitPath, for: endpoint.path, with: endpoint.method.socketData)
     }
 
     public func authenticate(_ path: String, credentials: [String : Any]) -> SignalProducer<Response, AnyFeathersError> {
@@ -79,6 +79,33 @@ public final class SocketProvider: Provider {
         return emit(to: "logout", with: [])
     }
 
+    /// Emit data to a given path for a given service.
+    ///
+    /// - Parameters:
+    ///   - path: Path to emit on.
+    ///   - service: Service to emit to.
+    ///   - data: Data to emit.
+    ///   - completion: Completion callback.
+    private func emit(to path: String, for service: String, with data: SocketData) -> SignalProducer<Response, AnyFeathersError> {
+        return SignalProducer { [weak self] observer, disposable in
+            guard let vSelf = self else {
+                observer.sendInterrupted()
+                return
+            }
+            if vSelf.client.status == .connecting {
+                vSelf.client.once("connect") { _,_  in
+                    vSelf.client.emitWithAck(path, service, data).timingOut(after: vSelf.timeout) { data in
+                        vSelf.handleEmitResponse(data: data, observer: observer)
+                    }
+                }
+            } else {
+                vSelf.client.emitWithAck(path, service, data).timingOut(after: vSelf.timeout) { data in
+                    vSelf.handleEmitResponse(data: data, observer: observer)
+                }
+            }
+        }
+    }
+    
     /// Emit data to a given path.
     ///
     /// - Parameters:
@@ -94,29 +121,30 @@ public final class SocketProvider: Provider {
             if vSelf.client.status == .connecting {
                 vSelf.client.once("connect") { _,_  in
                     vSelf.client.emitWithAck(path, data).timingOut(after: vSelf.timeout) { data in
-                        let result = vSelf.handleResponseData(data: data)
-                        if let error = result.error {
-                            observer.send(error: error)
-                        } else if let response = result.value {
-                            observer.send(value: response)
-                        } else {
-                            observer.send(error: AnyFeathersError(FeathersNetworkError.unknown))
-                        }
+                        vSelf.handleEmitResponse(data: data, observer: observer)
                     }
                 }
             } else {
                 vSelf.client.emitWithAck(path, data).timingOut(after: vSelf.timeout) { data in
-                    let result = vSelf.handleResponseData(data: data)
-                    if let error = result.error {
-                        observer.send(error: error)
-                    } else if let response = result.value {
-                        observer.send(value: response)
-                    } else {
-                        observer.send(error: AnyFeathersError(FeathersNetworkError.unknown))
-                    }
+                    vSelf.handleEmitResponse(data: data, observer: observer)
                 }
             }
-
+        }
+    }
+    
+    /// Handle the response from an emitted event.
+    ///
+    /// - Parameters:
+    ///   - data: Data received.
+    ///   - observer: Observer to send result to.
+    private func handleEmitResponse(data: [Any], observer: Signal<Response, AnyFeathersError>.Observer) {
+        let result = self.handleResponseData(data: data)
+        if let error = result.error {
+            observer.send(error: error)
+        } else if let response = result.value {
+            observer.send(value: response)
+        } else {
+            observer.send(error: AnyFeathersError(FeathersNetworkError.unknown))
         }
     }
 
